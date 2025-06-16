@@ -40,12 +40,6 @@ ENV ROOT=/stable-diffusion-webui
 COPY --from=download /repositories/ ${ROOT}/repositories/
 RUN mkdir ${ROOT}/interrogate && cp ${ROOT}/repositories/clip-interrogator/clip_interrogator/data/* ${ROOT}/interrogate
 
-RUN --mount=type=cache,target=/root/.cache/pip \
-  pip install pyngrok xformers==0.0.26.post1 \
-  git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379 \
-  git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1 \
-  git+https://github.com/mlfoundations/open_clip.git@v2.20.0
-
 # there seems to be a memory leak (or maybe just memory not being freed fast enough) that is fixed by this version of malloc
 # maybe move this up to the dependencies list.
 RUN apt-get -y install libgoogle-perftools-dev && apt-get clean
@@ -53,10 +47,8 @@ ENV LD_PRELOAD=libtcmalloc.so
 
 COPY . /docker
 
-RUN \
-  # mv ${ROOT}/style.css ${ROOT}/user.css && \
-  # one of the ugliest hacks I ever wrote \
-  sed -i 's/in_app_dir = .*/in_app_dir = True/g' /opt/conda/lib/python3.10/site-packages/gradio/routes.py && \
+RUN --mount=type=cache,target=/root/.cache/pip \
+  pip3 install torch torchvision torchaudio xformers --index-url https://download.pytorch.org/whl/cu128 && \
   git config --global --add safe.directory '*'
 
 WORKDIR ${ROOT}
